@@ -2,7 +2,7 @@
 # -- coding: utf-8 --
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from geometry_msgs.msg import Twist
 from smach import State, StateMachine
 from smach_ros import IntrospectionServer
@@ -16,6 +16,10 @@ global_goal = None
 
 # Publicador para los comandos de movimiento directo
 pub = None
+
+# Publicador para no hablar durante la ruta
+pub_ruta = None
+complex = False
 
 # Procesa comandos de voz para movimiento directo
 def procesar_comando_voz(comando):
@@ -44,6 +48,11 @@ class EsperarDestino(State):
 
     def execute(self, userdata):
         rospy.loginfo("Esperando un comando de voz para definir el destino...")
+
+        # No se esta realizando un movimiento complejo
+        global complex
+        complex = False
+        pub_ruta.publish(complex)
 
         global global_goal
 
@@ -147,6 +156,11 @@ class MoverRobot(State):
 
     def execute(self, userdata):
         rospy.loginfo("El robot se está moviendo al destino.")
+
+        global complex
+        complex = True
+        pub_ruta.publish(complex)    
+
         global global_goal
         # Cliente para la acción de move_base
         move_base_client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
@@ -162,9 +176,13 @@ class MoverRobot(State):
             state = move_base_client.get_state()
             if state == GoalStatus.SUCCEEDED:
                 rospy.loginfo("Destino alcanzado con éxito.")
+                complex = False
+                pub_ruta.publish(complex)
                 return 'completado'
             elif state in [GoalStatus.ABORTED, GoalStatus.REJECTED]:
                 rospy.loginfo("No se pudo alcanzar el destino.")
+                complex = False
+                pub_ruta.publish(complex)
                 return 'fallido'
 
             # Escuchar comandos de voz
@@ -173,6 +191,8 @@ class MoverRobot(State):
                 if comando == 'detener':
                     rospy.loginfo("Comando 'detener' recibido. Cancelando el objetivo.")
                     move_base_client.cancel_goal()  # Se cancela el movimiento del SimpleActionState
+                    complex = False
+                    pub_ruta.publish(complex)
                     return 'detener'
             except rospy.ROSException:
                 pass  # No se recibió ningún mensaje en el tiempo de espera
@@ -186,6 +206,9 @@ if __name__ == '__main__':
 
     # Publicador de movimiento directo
     pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+
+    # Publicador de movimiento complejo
+    pub_ruta = rospy.Publisher('complex', Bool, queue_size=10)  
 
     # Crear la máquina de estados
     sm = StateMachine(outcomes=['end'])

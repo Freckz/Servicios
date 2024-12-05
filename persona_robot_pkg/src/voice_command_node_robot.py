@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 import pyttsx3
+
+# Variable global para saber si estamos realizando un movimiento complejo
+is_complex = None   
 
 def process_and_speak(msg):
     rospy.loginfo(f"Comando recibido: {msg.data}")
     response = ""
 
+    global is_complex       # Puede que no haga falta el global
+
     # Genera una respuesta basada en el comando
+    # Comandos básicos
     if msg.data == "adelante":
         response = "Avanzando hacia adelante."
     elif msg.data == "atrás":
@@ -19,18 +25,21 @@ def process_and_speak(msg):
         response = "Girando a la derecha."
     elif msg.data == "detener":
         response = "Deteniéndome."
-    elif msg.data == "cocina":
-        response = "Dirigiéndome a la cocina."
-    elif msg.data == "comedor":
-        response = "Dirigiéndome al comedor."
-    elif msg.data == "habitación":
-        response = "Dirigiéndome a la habitación."
+    
+    # Comandos complejos
+    if is_complex is None:
+
+        if msg.data == "cocina":
+            response = "Dirigiéndome a la cocina."
+        elif msg.data == "comedor":
+            response = "Dirigiéndome al comedor."
+        elif msg.data == "habitación":
+            response = "Dirigiéndome a la habitación."
+        
     elif msg.data == "reanudar":
         response = "Reanudando la marcha"
     elif msg.data == "finalizar":
         response = "Finalizando operación. Hasta luego."
-    else:
-        response = "No entendí el comando. Por favor, repítelo."
 
     rospy.loginfo(f"Respuesta generada: {response}")
 
@@ -61,10 +70,16 @@ def configure_engine():
         rospy.loginfo(f"{idx}: {voice.name} ({voice.languages})")
     engine.setProperty('voice', voices[26].id)  # Cambia a la primera voz disponible (ajusta según preferencia)
 
+def complex(msg):
+    global is_complex
+    is_complex = msg.data
+    rospy.loginfo(f"Estado de movimiento complejo actalizado: {is_complex}")
+
 def command_processor_and_speaker():
     rospy.init_node('command_processor_and_speaker_node')
     configure_engine()
     rospy.Subscriber('voice_commands_persona', String, process_and_speak)
+    rospy.Subscriber('complex', Bool, complex)
     rospy.loginfo("Nodo combinado de procesamiento y síntesis listo.")
     rospy.spin()
     engine.stop()  # Detener el motor al finalizar
