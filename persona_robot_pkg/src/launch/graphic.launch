@@ -1,0 +1,3 @@
+<launch>
+    <node name="graphic_interface" pkg="persona_robot_pkg" type="interfacev5.py" output="screen"/>
+</launch>

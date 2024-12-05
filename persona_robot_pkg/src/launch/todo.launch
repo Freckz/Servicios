@@ -1,0 +1,5 @@
+<launch>
+    <node name="interfaz" pkg="persona_robot_pkg" type="interfacev5.py" output="screen"/>
+    <node name="reconocer" pkg="persona_robot_pkg" type="estados_voz.py" output="screen"/>
+    <node name="hablar" pkg="persona_robot_pkg" type="voice_command_node_robot.py" output="screen" />
+</launch>

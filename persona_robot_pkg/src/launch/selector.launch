@@ -1,0 +1,5 @@
+<launch>
+    <node name="ubicacion" pkg="persona_robot_pkg" type="prueba_initial_pose.py" output="screen"/>
+    <node name="escuhar" pkg="persona_robot_pkg" type="voice_command_node_persona.py" output="screen"/>
+    <node name="selector" pkg="persona_robot_pkg" type="selector_interface.py" output="screen" />    
+</launch>

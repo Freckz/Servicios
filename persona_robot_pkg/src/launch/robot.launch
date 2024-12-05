@@ -1,0 +1,3 @@
+<launch>
+    <node name="robot_node" pkg="persona_robot_pkg" type="estados_voz.py" output="screen"/>
+</launch>
